@@ -1,14 +1,21 @@
-#!/bin/bash -e
-#
-# S2I run script for the 'atomic-oracle-java' image.
-# The run script executes the server that runs your application.
-#
-# For more information see the documentation:
-#	https://github.com/openshift/source-to-image/blob/master/docs/builder_image.md
-#
+#!/bin/bash
 
-cd /opt/openshift && \
-exec java \
-    -Djava.security.egd=file:/dev/./urandom \
-    -jar /opt/openshift/app.jar \
-    $APP_OPTIONS
+# Command line arguments given to this script
+args="$*"
+
+# Global S2I variable setup
+source `dirname "$0"`/s2i-setup
+
+# Always include jolokia-opts, which can be empty if switched off via env
+export JAVA_OPTIONS="${JAVA_OPTIONS:+${JAVA_OPTIONS} }"
+
+if [ -f "${DEPLOYMENTS_DIR}/bin/run.sh" ]; then
+    echo "Starting the application using the bundled ${DEPLOYMENTS_DIR}/bin/run.sh ..."
+    exec ${DEPLOYMENTS_DIR}/bin/run.sh $args ${JAVA_ARGS}
+else
+    echo "Starting the Java application ..."
+    exec java \
+        -Djava.security.egd=file:/dev/./urandom \
+        -jar ${DEPLOYMENTS_DIR}/app.jar \
+         ${JAVA_ARGS}
+fi
