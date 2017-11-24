@@ -1,30 +1,93 @@
-#!/bin/bash
-. $(dirname $0)/functions
-HOME=/opt/app-root/src
+#!/bin/sh
+# Global S2I variable setup
 
-# we will move any code provided by s2i to here
-LOCAL_SOURCE_DIR=${HOME}/source
-mkdir -p $LOCAL_SOURCE_DIR
-# TODO: Verify a $HOME is set
-
-# Resulting artifact files will be deployed to /opt/openshift
-DEPLOY_DIR=/opt/openshift
-
-# For binary builds
-# the subdirectory within LOCAL_SOURCE_DIR from where we should copy build
-# artifacts (*.war, *.jar)
-ARTIFACT_DIR=${ARTIFACT_DIR:-.}
-copy_artifacts "$ARTIFACT_DIR" jar
-
-# As Microservices you should only have 1 fat jar
-if [ $(ls ${DEPLOY_DIR}/*${APP_SUFFIX}.jar | wc -l) -eq 1 ]; then
-  echo "[INFO] Copying ${DEPLOY_DIR}/*${APP_SUFFIX}.jar into ${DEPLOY_DIR}/app.jar"
-  cp ${DEPLOY_DIR}/*${APP_SUFFIX}.jar ${DEPLOY_DIR}/app.jar
-  [ ! -f ${DEPLOY_DIR}/app.jar ] && echo "Application could not be properly built." && exit 1
-  echo "[INFO] Application jar file is located in ${DEPLOY_DIR}/app.jar"
-else
-  echo "[ERROR] No app.jar file located in ${DEPLOY_DIR}"
-  exit 1
+if [ "${SCRIPT_DEBUG}" = "true" ] ; then
+    set -x
+    echo "Script debugging is enabled, allowing bash commands and their arguments to be printed as they are executed"
 fi
 
-exit 0
+SCRIPT_DIR="$(dirname $0)"
+source "${SCRIPT_DIR}/s2i-setup"
+source "${SCRIPT_DIR}/common.sh"
+
+
+# =========================================================================
+# Helper functions:
+
+function check_error() {
+  local label=$1
+  local error=$2
+  if [ ${error} -ne 0 ]; then
+    echo "Aborting due to error code $error for $label"
+    exit ${error}
+  fi
+}
+
+function get_output_dir() {
+  local dir=""
+  if [ "${ARTIFACT_DIR:0:1}" = "/" ]; then
+     echo "ARTIFACT_DIR \"${ARTIFACT_DIR}\" must not be absolute but relative to the source directory"
+     exit 1
+  fi
+  dir="${S2I_SOURCE_DIR}/${ARTIFACT_DIR}"
+  # Normalize dir
+  dir=$(echo ${dir} | tr -s /)
+  dir=${dir%/}
+  # The parent must exist but target/ won't exist yet
+  if [ ! -d $(dirname "${dir}"}) ]; then
+    echo "Please specify an existing build directory ARTIFACT_DIR (tried '$(dirname "${dir}")' which does not exist)"
+    exit 1
+  fi
+  echo ${dir}
+}
+
+function copy_dir() {
+  local src=$1
+  local dest=$2
+
+  # Copy recursively and preserve ownership: -a
+  cp -a ${src}/* ${dest}
+}
+
+function copy_artifacts() {
+    local dir=$1
+    local dest=$2
+
+    cd ${dir}
+
+    local cp_args=${ARTIFACT_COPY_ARGS}
+    if [ x"${cp_args}" = x ]; then
+        if [ -d "hawt-app" ]; then
+            cp_args="-r hawt-app/*"
+        else
+            cp_args="*.jar"
+        fi
+    fi
+    echo "Running: cp ${cp_args} ${dest}"
+    cp ${cp_args} ${dest}
+}
+
+
+# =========================================================================
+# Main
+
+echo "=================================================================="
+echo "Starting S2I Java Build ....."
+build_dir=$(get_output_dir)
+check_error "Cannot get output dir: $build_dir" $?
+echo "S2I source build with plain binaries detected"
+if [ -d "${S2I_SOURCE_DIR}/deployments" ]; then
+  default_binary_dir="${S2I_SOURCE_DIR}/deployments"
+else
+  default_binary_dir="${S2I_SOURCE_DIR}"
+fi
+binary_dir="${ARTIFACT_DIR:-${default_binary_dir}}"
+# Assuming that the source already contains compiled artefacts
+echo "Copying binaries from ${binary_dir} to ${DEPLOYMENTS_DIR} ..."
+copy_dir ${binary_dir} ${DEPLOYMENTS_DIR}
+check_error "copying ${binary_dir} to ${DEPLOYMENTS_DIR}" $?
+
+# Remove java tmp perf data dir owned by 185
+rm -rf /tmp/hsperfdata_jboss
+
+echo "... done"
