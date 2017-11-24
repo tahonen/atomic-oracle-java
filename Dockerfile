@@ -3,7 +3,7 @@ ENV JRE_DOWNLOAD_URL=http://download.oracle.com/otn-pub/java/jdk/8u152-b16/aa033
 RUN curl -L -O -H "Cookie: oraclelicense=accept-securebackup-cookie"  ${JRE_DOWNLOAD_URL} && rpm -i jre*.rpm && rm -Rf jre*.rpm
 RUN microdnf install tar --enablerepo=rhel-7-server-rpms && \
     microdnf update; microdnf clean all
-RUN mkdir -p /deployments && chmod -R a+rwX /deloyments && \
+RUN mkdir -p /deployments && chmod -R a+rwX /deployments && \
 
 LABEL io.k8s.description="Platform for running Java (fatjar) with Oracle Java" \
       io.k8s.display-name="Java S2I binary builder 1.0" \
