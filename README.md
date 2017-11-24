@@ -33,5 +33,12 @@ oc expose svc hello-fatjar -l app=hello-fatjar
 
 Thats it!
 
-If you like you can but app building to Jenkins pipeline and add trigger to build when builder images changes.
+## Using template to setup and test
 
+You just need to process template and then start build pipeline for deploying service.
+
+```
+oc process -f /Users/tahonen/src/atomic-oracle-java/openshift/app-template.yml -p SERVICE=fatjar -p SOURCE_CODE=https://github.com/tahonen/hello-springboot.git | oc create -f -
+# and then start pipeline. Pipeline name is in format $SERVICE-pipeline
+oc start-build fatjar-pipeline
+```
