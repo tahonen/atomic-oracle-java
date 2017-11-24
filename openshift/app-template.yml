@@ -180,6 +180,11 @@ objects:
     - generic:
         secret: secret101
       type: Generic
+    - imageChange:
+        from:
+          kind: ImageStreamTag
+          name: 'atomic-oracle-java:latest'
+      type: ImageChange
   status:
     lastVersion: 0
 - apiVersion: v1
