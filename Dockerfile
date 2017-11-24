@@ -5,8 +5,14 @@ RUN mkdir -p /opt/openshift && \
     mkdir -p /opt/app-root/source && chmod -R a+rwX /opt/app-root/source && \
     mkdir -p /opt/s2i/destination && chmod -R a+rwX /opt/s2i/destination && \
     mkdir -p /opt/app-root/src && chmod -R a+rwX /opt/app-root/src
-LABEL io.openshift.s2i.scripts-url=image:///usr/local/s2i
+
+LABEL io.k8s.description="Platform for running Java (fatjar) with Oracle Java" \
+      io.k8s.display-name="Java S2I binary builder 1.0" \
+      io.openshift.expose-services="8080:http" \
+      io.openshift.tags="builder,oraclejava,java,microservices,fatjar" \
+      io.openshift.s2i.scripts-url=image:///usr/local/s2i
 COPY ./s2i/bin/ /usr/local/s2i
+RUN chown -R 1001:1001 /opt/openshift && chmod -R a+rwX /usr/local/s2i
 USER 1001
 EXPOSE 8080
 CMD ["usage"]
