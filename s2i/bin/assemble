@@ -23,58 +23,12 @@ function check_error() {
   fi
 }
 
-function get_output_dir() {
-  local dir=""
-  if [ "${ARTIFACT_DIR:0:1}" = "/" ]; then
-     echo "ARTIFACT_DIR \"${ARTIFACT_DIR}\" must not be absolute but relative to the source directory"
-     exit 1
-  fi
-  dir="${S2I_SOURCE_DIR}/${ARTIFACT_DIR}"
-  # Normalize dir
-  dir=$(echo ${dir} | tr -s /)
-  dir=${dir%/}
-  # The parent must exist but target/ won't exist yet
-  if [ ! -d $(dirname "${dir}"}) ]; then
-    echo "Please specify an existing build directory ARTIFACT_DIR (tried '$(dirname "${dir}")' which does not exist)"
-    exit 1
-  fi
-  echo ${dir}
-}
-
-function copy_dir() {
-  local src=$1
-  local dest=$2
-
-  # Copy recursively and preserve ownership: -a
-  cp -a ${src}/* ${dest}
-}
-
-function copy_artifacts() {
-    local dir=$1
-    local dest=$2
-
-    cd ${dir}
-
-    local cp_args=${ARTIFACT_COPY_ARGS}
-    if [ x"${cp_args}" = x ]; then
-        if [ -d "hawt-app" ]; then
-            cp_args="-r hawt-app/*"
-        else
-            cp_args="*.jar"
-        fi
-    fi
-    echo "Running: cp ${cp_args} ${dest}"
-    cp ${cp_args} ${dest}
-}
-
 
 # =========================================================================
 # Main
 
 echo "=================================================================="
 echo "Starting S2I Java Build ....."
-build_dir=$(get_output_dir)
-check_error "Cannot get output dir: $build_dir" $?
 echo "S2I source build with plain binaries detected"
 if [ -d "${S2I_SOURCE_DIR}/deployments" ]; then
   default_binary_dir="${S2I_SOURCE_DIR}/deployments"

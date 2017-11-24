@@ -6,9 +6,6 @@ args="$*"
 # Global S2I variable setup
 source `dirname "$0"`/s2i-setup
 
-# Always include jolokia-opts, which can be empty if switched off via env
-export JAVA_OPTIONS="${JAVA_OPTIONS:+${JAVA_OPTIONS} }"
-
 if [ -f "${DEPLOYMENTS_DIR}/bin/run.sh" ]; then
     echo "Starting the application using the bundled ${DEPLOYMENTS_DIR}/bin/run.sh ..."
     exec ${DEPLOYMENTS_DIR}/bin/run.sh $args ${JAVA_ARGS}
