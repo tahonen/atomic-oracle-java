@@ -1,0 +1,304 @@
+apiVersion: v1
+kind: Template
+metadata:
+  creationTimestamp: null
+  name: atomic-oracle-java-template
+objects:
+- apiVersion: v1
+  kind: DeploymentConfig
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    generation: 1
+    labels:
+      app: ${SERVICE}
+    name: ${SERVICE}
+  spec:
+    replicas: 1
+    selector:
+      app: ${SERVICE}
+      deploymentconfig: ${SERVICE}
+    strategy:
+      activeDeadlineSeconds: 21600
+      resources: {}
+      rollingParams:
+        intervalSeconds: 1
+        maxSurge: 25%
+        maxUnavailable: 25%
+        timeoutSeconds: 600
+        updatePeriodSeconds: 1
+      type: Rolling
+    template:
+      metadata:
+        annotations:
+          openshift.io/generated-by: OpenShiftNewApp
+        creationTimestamp: null
+        labels:
+          app: ${SERVICE}
+          deploymentconfig: ${SERVICE}
+      spec:
+        containers:
+        - image: ''
+          imagePullPolicy: Always
+          name: ${SERVICE}
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+    test: false
+    triggers:
+    - type: ConfigChange
+    - imageChangeParams:
+        automatic: true
+        containerNames:
+        - ${SERVICE}
+        from:
+          kind: ImageStreamTag
+          name: ${SERVICE}:latest
+          namespace: test
+      type: ImageChange
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewBuild
+    creationTimestamp: null
+    labels:
+      build: atomic-oracle-java
+    name: atomic-oracle-java
+  spec:
+    failedBuildsHistoryLimit: 5
+    nodeSelector: null
+    output:
+      to:
+        kind: ImageStreamTag
+        name: atomic-oracle-java:latest
+    postCommit: {}
+    resources: {}
+    runPolicy: Serial
+    source:
+      git:
+        uri: https://github.com/tahonen/atomic-oracle-java.git
+      type: Git
+    strategy:
+      dockerStrategy:
+        from:
+          kind: ImageStreamTag
+          name: rhel7-atomic:latest
+      type: Docker
+    successfulBuildsHistoryLimit: 5
+    triggers:
+    - github:
+        secret: lSlpz_QkoK-8IEOblnIA
+      type: GitHub
+    - generic:
+        secret: Wk4BX5VAcnueJx1gXSoA
+      type: Generic
+    - type: ConfigChange
+    - imageChange: {}
+      type: ImageChange
+  status:
+    lastVersion: 0
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewBuild
+    creationTimestamp: null
+    labels:
+      build: ${SERVICE}
+    name: ${SERVICE}
+  spec:
+    failedBuildsHistoryLimit: 5
+    nodeSelector: null
+    output:
+      to:
+        kind: ImageStreamTag
+        name: ${SERVICE}:latest
+    postCommit: {}
+    resources: {}
+    runPolicy: Serial
+    source:
+      binary: {}
+      type: Binary
+    strategy:
+      sourceStrategy:
+        from:
+          kind: ImageStreamTag
+          name: atomic-oracle-java:latest
+      type: Source
+    successfulBuildsHistoryLimit: 5
+    triggers:
+    - github:
+        secret: MN3fzJrPr7R6xfWgxALn
+      type: GitHub
+    - generic:
+        secret: hK71Cr_8Iwx_7LJV-B-K
+      type: Generic
+  status:
+    lastVersion: 0
+- apiVersion: v1
+  kind: BuildConfig
+  metadata:
+    annotations:
+      pipeline.alpha.openshift.io/uses: '[{"name": "${SERVICE}", "kind": "DeploymentConfig"}]'
+    creationTimestamp: null
+    labels:
+      app: ${SERVICE}
+      name: ${SERVICE}-pipeline
+    name: ${SERVICE}-pipeline
+  spec:
+    nodeSelector: null
+    output: {}
+    postCommit: {}
+    resources: {}
+    runPolicy: Serial
+    source:
+      type: None
+    strategy:
+      jenkinsPipelineStrategy:
+        jenkinsfile: |-
+          node('maven') {
+            stage 'build'
+              git branch: 'master', url: '${SOURCE_CODE}'
+              sh "mvn clean install -DskipTests=true"
+              sh "oc start-build ${SERVICE} --from-dir target --follow"
+          }
+      type: JenkinsPipeline
+    triggers:
+    - github:
+        secret: secret101
+      type: GitHub
+    - generic:
+        secret: secret101
+      type: Generic
+  status:
+    lastVersion: 0
+- apiVersion: v1
+  kind: Service
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewApp
+    creationTimestamp: null
+    labels:
+      app: ${SERVICE}
+    name: ${SERVICE}
+  spec:
+    ports:
+    - name: 8080-tcp
+      port: 8080
+      protocol: TCP
+      targetPort: 8080
+    selector:
+      app: ${SERVICE}
+      deploymentconfig: ${SERVICE}
+    sessionAffinity: None
+    type: ClusterIP
+  status:
+    loadBalancer: {}
+- apiVersion: v1
+  kind: Route
+  metadata:
+    annotations:
+      openshift.io/host.generated: "true"
+    creationTimestamp: null
+    labels:
+      app: ${SERVICE}
+    name: ${SERVICE}
+  spec:
+    port:
+      targetPort: 8080-tcp
+    to:
+      kind: Service
+      name: ${SERVICE}
+      weight: 100
+    wildcardPolicy: None
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewBuild
+    creationTimestamp: null
+    generation: 1
+    labels:
+      build: ${SERVICE}
+    name: ${SERVICE}
+  spec:
+    lookupPolicy:
+      local: false
+    tags:
+    - annotations: null
+      from:
+        kind: DockerImage
+        name: ${SERVICE}:latest
+      generation: null
+      importPolicy: {}
+      name: latest
+      referencePolicy:
+        type: ""
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewBuild
+    creationTimestamp: null
+    generation: 2
+    labels:
+      build: atomic-oracle-java
+    name: rhel7-atomic
+  spec:
+    lookupPolicy:
+      local: false
+    tags:
+    - annotations:
+        openshift.io/imported-from: registry.access.redhat.com/rhel7-atomic
+      from:
+        kind: DockerImage
+        name: registry.access.redhat.com/rhel7-atomic:latest
+      generation: 2
+      importPolicy: {}
+      name: latest
+      referencePolicy:
+        type: Source
+- apiVersion: v1
+  kind: ImageStream
+  metadata:
+    annotations:
+      openshift.io/generated-by: OpenShiftNewBuild
+    creationTimestamp: null
+    generation: 1
+    labels:
+      build: atomic-oracle-java
+    name: atomic-oracle-java
+  spec:
+    lookupPolicy:
+      local: false
+    tags:
+    - annotations: null
+      from:
+        kind: DockerImage
+        name: atomic-oracle-java:latest
+      generation: null
+      importPolicy: {}
+      name: latest
+      referencePolicy:
+        type: ""
+parameters:
+- description: Name of the service
+  displayName: Service
+  name: SERVICE
+  required: true
+  value: hello-fatjar
+- description: Application source code (FatJar Maven)
+  displayName: Source code
+  name: SOURCE_CODE
+  required: true
+  value: https://github.com/tahonen/hello-springboot.git
