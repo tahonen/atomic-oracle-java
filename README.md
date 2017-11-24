@@ -38,7 +38,7 @@ Thats it!
 You just need to process template and then start build pipeline for deploying service.
 
 ```
-oc process -f /Users/tahonen/src/atomic-oracle-java/openshift/app-template.yml -p SERVICE=fatjar -p SOURCE_CODE=https://github.com/tahonen/hello-springboot.git | oc create -f -
+oc process -f https://raw.githubusercontent.com/tahonen/atomic-oracle-java/master/openshift/app-template.yml -p SERVICE=fatjar -p SOURCE_CODE=https://github.com/tahonen/hello-springboot.git | oc create -f -
 # and then start pipeline. Pipeline name is in format $SERVICE-pipeline
 oc start-build fatjar-pipeline
 ```
