@@ -1,0 +1,29 @@
+#!/bin/bash
+HOME=/opt/app-root/src
+
+# we will move any code provided by s2i to here
+LOCAL_SOURCE_DIR=${HOME}/source
+mkdir -p $LOCAL_SOURCE_DIR
+# TODO: Verify a $HOME is set
+
+# Resulting artifact files will be deployed to /opt/openshift
+DEPLOY_DIR=/opt/openshift
+
+# For binary builds
+# the subdirectory within LOCAL_SOURCE_DIR from where we should copy build
+# artifacts (*.war, *.jar)
+ARTIFACT_DIR=${ARTIFACT_DIR:-.}
+copy_artifacts "$ARTIFACT_DIR" jar
+
+# As Microservices you should only have 1 fat jar
+if [ $(ls ${DEPLOY_DIR}/*${APP_SUFFIX}.jar | wc -l) -eq 1 ]; then
+  echo "[INFO] Copying ${DEPLOY_DIR}/*${APP_SUFFIX}.jar into ${DEPLOY_DIR}/app.jar"
+  cp ${DEPLOY_DIR}/*${APP_SUFFIX}.jar ${DEPLOY_DIR}/app.jar
+  [ ! -f ${DEPLOY_DIR}/app.jar ] && echo "Application could not be properly built." && exit 1
+  echo "[INFO] Application jar file is located in ${DEPLOY_DIR}/app.jar"
+else
+  echo "[ERROR] No app.jar file located in ${DEPLOY_DIR}"
+  exit 1
+fi
+
+exit 0
