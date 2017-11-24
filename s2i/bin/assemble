@@ -84,7 +84,7 @@ fi
 binary_dir="${ARTIFACT_DIR:-${default_binary_dir}}"
 # Assuming that the source already contains compiled artefacts
 echo "Copying binaries from ${binary_dir} to ${DEPLOYMENTS_DIR} ..."
-copy_dir ${binary_dir}/*.jar ${DEPLOYMENTS_DIR}/app.jar
+cp ${binary_dir}/*.jar ${DEPLOYMENTS_DIR}/app.jar
 check_error "copying ${binary_dir} to ${DEPLOYMENTS_DIR}" $?
 
 # Remove java tmp perf data dir owned by 185
