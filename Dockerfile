@@ -1,7 +1,6 @@
 FROM registry.access.redhat.com/rhel7-atomic
-ENV JRE_DOWNLOAD_URL=http://download.oracle.com/otn-pub/java/jdk/8u161-b12/2f38c3b165be4555a1fa6e98c45e0808/jre-8u161-linux-x64.rpm
-#ENV JRE_DOWNLOAD_URL=http://download.oracle.com/otn-pub/java/jdk/8u162-b12/0da788060d494f5095bf8624735fa2f1/jre-8u162-linux-x64.rpm
-RUN curl -L -O -H "Cookie: oraclelicense=accept-securebackup-cookie" http://download.oracle.com/otn-pub/java/jdk/8u162-b12/0da788060d494f5095bf8624735fa2f1/jre-8u162-linux-x64.rpm && rpm -i jre*.rpm && rm -Rf jre*.rpm
+ENV JRE_DOWNLOAD_URL=http://download.oracle.com/otn-pub/java/jdk/8u171-b11/512cd62ec5174c3487ac17c61aaa89e8/jre-8u171-linux-x64.rpm
+RUN curl -L -O -H "Cookie: oraclelicense=accept-securebackup-cookie" $JRE_DOWNLOAD_URL  && rpm -i jre*.rpm && rm -Rf jre*.rpm
 RUN microdnf install tar --enablerepo=rhel-7-server-rpms && \
     microdnf update; microdnf clean all
     
