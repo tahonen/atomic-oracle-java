@@ -14,5 +14,6 @@ else
     exec java \
         -Djava.security.egd=file:/dev/./urandom \
         -jar ${DEPLOYMENTS_DIR}/app.jar \
+        -javaagent:/newrelic/newrelic.jar \
          ${JAVA_ARGS}
 fi

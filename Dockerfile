@@ -1,9 +1,11 @@
 FROM registry.access.redhat.com/rhel7-atomic
 ENV JRE_DOWNLOAD_URL=http://download.oracle.com/otn-pub/java/jdk/8u171-b11/512cd62ec5174c3487ac17c61aaa89e8/jre-8u171-linux-x64.rpm
 RUN curl -L -O -H "Cookie: oraclelicense=accept-securebackup-cookie" $JRE_DOWNLOAD_URL  && rpm -i jre*.rpm && rm -Rf jre*.rpm
-RUN microdnf install tar --enablerepo=rhel-7-server-rpms && \
+RUN microdnf install unzip tar --enablerepo=rhel-7-server-rpms && \
     microdnf update; microdnf clean all
-    
+RUN curl -o newrelic.zip http://download.newrelic.com/newrelic/java-agent/newrelic-agent/current/newrelic-java.zip && mkdir /newrelic && unzip newrelic.zip -d / && cd /
+RUN ls /newrelic
+RUN sed -ie "s/<%= license_key %>/${NEWRELIC_LICENSE}/g" /newrelic/newrelic.yml && sed -ie "s/My Application/${NEWRELIC_APPNAME}/g" /newrelic/newrelic.yml   
 RUN mkdir -p /deployments && chmod -R a+rwX /deployments
 
 LABEL io.k8s.description="Platform for running Java (fatjar) with Oracle Java" \
